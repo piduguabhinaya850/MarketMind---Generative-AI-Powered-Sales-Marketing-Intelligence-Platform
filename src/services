@@ -1,7 +1,64 @@
-export const generateMarketingContent = async (prompt: string) => {
-  return "AI response will appear here";
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+import { GoogleGenAI } from "@google/genai";
+
+const apiKey = process.env.GEMINI_API_KEY;
+
+if (!apiKey) {
+  throw new Error("GEMINI_API_KEY is missing");
+}
+
+const ai = new GoogleGenAI({ apiKey });
+
+export const geminiModel = "gemini-3-flash-preview";
+
+export interface MarketInsight {
+  trend: string;
+  impact: "High" | "Medium" | "Low";
+  description: string;
+  actionableStep: string;
+}
+
+export interface CompetitorAnalysis {
+  name: string;
+  strengths: string[];
+  weaknesses: string[];
+  marketShare: number;
+}
+
+export const generateMarketAnalysis = async (industry: string) => {
+  const prompt = `Analyze the current state of the ${industry} industry. 
+  Provide a list of 4 key market trends with their impact (High, Medium, Low), a brief description, and an actionable step for a business.
+  Also provide a brief analysis of 3 major competitors in this space.
+  Return the response in JSON format.`;
+
+  const response = await ai.models.generateContent({
+    model: geminiModel,
+    contents: [{ parts: [{ text: prompt }] }],
+    config: {
+      responseMimeType: "application/json",
+    },
+  });
+
+  return JSON.parse(response.text || "{}");
 };
 
-export const analyzeMarket = async (data: string) => {
-  return "Market analysis result";
+export const generateMarketingContent = async (product: string, targetAudience: string, platform: string) => {
+  const prompt = `Generate 3 variations of marketing copy for ${product} targeting ${targetAudience} for the ${platform} platform.
+  Include a headline and body text for each.
+  Return the response in JSON format.`;
+
+  const response = await ai.models.generateContent({
+    model: geminiModel,
+    contents: [{ parts: [{ text: prompt }] }],
+    config: {
+      responseMimeType: "application/json",
+    },
+  });
+
+  return JSON.parse(response.text || "{}");
 };
